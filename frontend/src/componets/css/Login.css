@@ -1,0 +1,91 @@
+.login-wrapper {
+  font-family: "Poppins", sans-serif;
+  height: 100vh;
+  background-color: #cddde6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+#formContent {
+  background: #fff;
+  padding: 30px;
+  width: 90%;
+  max-width: 450px;
+  border-radius: 10px;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.3);
+  text-align: center;
+}
+
+.fadeIn {
+  animation: fadeIn ease-in 1s;
+  animation-fill-mode: forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+input[type="text"],
+input[type="password"] {
+  background-color: #f6f6f6;
+  border: none;
+  color: #0d0d0d;
+  padding: 15px;
+  margin: 5px 0;
+  width: 85%;
+  border-radius: 5px;
+  font-size: 16px;
+}
+
+input[type="submit"] {
+  background-color: #56baed;
+  color: white;
+  padding: 12px 40px;
+  border: none;
+  border-radius: 5px;
+  margin-top: 10px;
+  font-size: 14px;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+input[type="submit"]:hover {
+  background-color: #444;
+}
+
+#formFooter {
+  background-color: #f6f6f6;
+  padding: 15px;
+  margin-top: 10px;
+  border-radius: 0 0 10px 10px;
+}
+
+.underlineHover {
+  color: #888;
+  text-decoration: none;
+  position: relative;
+}
+
+.underlineHover::after {
+  content: "";
+  position: absolute;
+  width: 0%;
+  height: 2px;
+  background: #444;
+  bottom: -4px;
+  left: 0;
+  transition: width 0.3s;
+}
+
+.underlineHover:hover::after {
+  width: 100%;
+}

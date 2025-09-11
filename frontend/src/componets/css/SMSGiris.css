@@ -1,0 +1,64 @@
+.sms-login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(to right, #e0f7fa, #fff);
+}
+
+.sms-login-card {
+  background: white;
+  padding: 40px 30px;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+}
+
+.sms-login-card h2 {
+  margin-bottom: 25px;
+  color: #333;
+}
+
+.sms-input {
+  width: 100%;
+  padding: 10px 12px;
+  margin: 10px 0 20px 0;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 16px;
+}
+
+.sms-button {
+  width: 100%;
+  padding: 10px;
+  background-color: #0288d1;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.sms-button:hover {
+  background-color: #0277bd;
+}
+
+.sms-footer {
+  margin-top: 20px;
+}
+
+.sms-footer a {
+  text-decoration: none;
+  color: #0288d1;
+}
+
+.sms-message {
+  background-color: #f1f8e9;
+  color: #33691e;
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}

@@ -1,0 +1,35 @@
+.assistant-wrapper {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 9999;
+}
+
+.assistant-box {
+  width: 320px;
+  max-height: 450px;
+  display: flex;
+  flex-direction: column;
+}
+
+.assistant-body {
+  flex: 1;
+  overflow-y: auto;
+  background-color: #f9f9f9;
+  border-top: 1px solid #ccc;
+  border-bottom: 1px solid #ccc;
+}
+
+.assistant-toggle {
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  font-size: 24px;
+}
+
+.assistant-body div {
+  font-size: 0.95rem;
+  line-height: 1.4;
+  max-width: 80%;
+  word-wrap: break-word;
+}

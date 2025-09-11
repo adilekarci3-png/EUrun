@@ -1,0 +1,23 @@
+[
+  {
+    "id": 1,
+    "question_tr": "ürünüm yayında değil",
+    "question_en": "my product is not published",
+    "answer_tr": "Ürününüz henüz onaylanmamış olabilir. 'Ürünlerim' sekmesini kontrol edin.",
+    "answer_en": "Your product might still be awaiting approval. Please check the 'My Products' section."
+  },
+  {
+    "id": 2,
+    "question_tr": "kargo kaç günde gelir",
+    "question_en": "how long does shipping take",
+    "answer_tr": "Kargo sürelerimiz şehir içi için 1-3 iş günü, şehir dışı için 3-5 iş günüdür.",
+    "answer_en": "Shipping usually takes 1-3 business days within the city and 3-5 days outside."
+  },
+  {
+    "id": 3,
+    "question_tr": "resim yüklenmiyor",
+    "question_en": "image upload not working",
+    "answer_tr": "Görsel boyutu 5MB'ı geçmemeli, JPG veya PNG olmalı.",
+    "answer_en": "The image must be under 5MB and in JPG or PNG format."
+  }
+]
