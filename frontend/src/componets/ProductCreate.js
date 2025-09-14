@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch } from "react-redux";
-import { addNotification } from "../redux/notificationsSlice";
+import { addNotification, fetchNotifications } from "../redux/notificationsSlice";
 import { Container, Form, Button } from "react-bootstrap";
 import axios from "axios";
 import Swal from "sweetalert2";

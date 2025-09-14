@@ -1,25 +1,25 @@
-# backend/dbrouters.py
+# # backend/dbrouters.py
 
-class DatabaseRouter:
-    def db_for_read(self, model, **hints):
-        if model._meta.app_label == 'firmalar':  # örnek uygulama adı
-            return 'plateocr_vt'
-        return None
+# class DatabaseRouter:
+#     def db_for_read(self, model, **hints):
+#         if model._meta.app_label == 'firmalar':  # örnek uygulama adı
+#             return 'plateocr_vt'
+#         return None
 
-    def db_for_write(self, model, **hints):
-        if model._meta.app_label == 'firmalar':
-            return 'plateocr_vt'
-        return None
+#     def db_for_write(self, model, **hints):
+#         if model._meta.app_label == 'firmalar':
+#             return 'plateocr_vt'
+#         return None
 
-    def allow_relation(self, obj1, obj2, **hints):
-        if (
-            obj1._meta.app_label == 'firmalar' or
-            obj2._meta.app_label == 'firmalar'
-        ):
-            return True
-        return None
+#     def allow_relation(self, obj1, obj2, **hints):
+#         if (
+#             obj1._meta.app_label == 'firmalar' or
+#             obj2._meta.app_label == 'firmalar'
+#         ):
+#             return True
+#         return None
 
-    def allow_migrate(self, db, app_label, model_name=None, **hints):
-        if app_label == 'firmalar':
-            return db == 'plateocr_vt'
-        return db == 'default'
+#     def allow_migrate(self, db, app_label, model_name=None, **hints):
+#         if app_label == 'firmalar':
+#             return db == 'plateocr_vt'
+#         return db == 'default'

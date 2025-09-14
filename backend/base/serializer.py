@@ -7,13 +7,16 @@ from rest_framework.validators import UniqueValidator
 
 from django.contrib.auth.password_validation import validate_password
 
-class ProductSerializer(serializers.ModelSerializer):  
+class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
-        fields = [
-            'id', 'name', 'image', 'description', 'brand', 'category',
-            'price', 'count_in_stock', 'rating', 'num_reviews'
-        ] 
+        fields = "__all__"
+        read_only_fields = ["created_by"]
+
+    def create(self, validated_data):
+        user = self.context["request"].user
+        validated_data["created_by"] = user if user.is_authenticated else None
+        return super().create(validated_data)
     
 class BrandSerializer(serializers.ModelSerializer):
     class Meta:
@@ -122,8 +125,7 @@ class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notification
         fields = [
-            "id", "recipient", "title", "message",
-            "type", "channel", "read", "created_at",
-            "content_type", "object_id",
+            "id", "title", "message", "type", "channel",
+            "read", "created_at", "content_type", "object_id"
         ]
-        read_only_fields = ["id", "created_at"]
+        read_only_fields = ["id", "created_at", "content_type", "object_id"]

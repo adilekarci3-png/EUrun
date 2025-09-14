@@ -88,14 +88,13 @@ def get_product(request,pk):
         return Response({"detail": "Ürün bulunamadı."}, status=404)
     
 @swagger_auto_schema(method='post', request_body=ProductSerializer)
-@api_view(['POST'])
+@api_view(["POST"])
 def create_product(request):
-    print(request.data)
-    serializer = ProductSerializer(data=request.data)
+    serializer = ProductSerializer(data=request.data, context={"request": request})
     if serializer.is_valid():
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST) 
+        product = serializer.save()
+        return Response(ProductSerializer(product).data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 @swagger_auto_schema(method='post', request_body=CategorySerializer)
 @api_view(['POST'])

@@ -123,21 +123,17 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+    'default': {  # TEK DB: dersane_db (örnek)
+          'ENGINE': 'django.db.backends.postgresql',
+        'NAME': config('PG2_NAME', default='eurun_db'),
+        'USER': config('PG2_USER', default='eurun_user'),
+        'PASSWORD': config('PG2_PASSWORD', default='EurunPass123'),
+        'HOST': config('PG2_HOST', default='127.0.0.1'),
+        'PORT': config('PG2_PORT', default='5432'),
     },
-    'plateocr_vt': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': config('PG_NAME', default='plateocr_vt'),
-        'USER': config('PG_USER', default='postgres'),
-        'PASSWORD': config('PG_PASSWORD', default=''),
-        'HOST': config('PG_HOST', default='localhost'),
-        'PORT': config('PG_PORT', default='5432'),
-    }
 }
 
-DATABASE_ROUTERS = ['backend.dbrouters.DatabaseRouter']
+# DATABASE_ROUTERS = ['backend.dbrouters.DatabaseRouter']
 SITE_ID = 1
 
 # Password validation
