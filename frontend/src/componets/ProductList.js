@@ -18,13 +18,32 @@ const onSelectionChanged = (e) => {
 };
 
 const renderDetail = (props) => {
-  const { image, description } = props.data;
+  const { image, description, full_name } = props.data || {};
+  const API_BASE =
+    import.meta?.env?.VITE_API_BASE_URL ||
+    process.env.REACT_APP_API_BASE ||
+    "http://localhost:8000";
+
+  // 1) Anlamlı alt: isim varsa isim, yoksa kısa açıklama
+  const altText =
+    full_name?.trim() ||
+    (description ? description.trim().slice(0, 80) : "");
+
+  // 2) Eğer altText boş kalıyorsa görseli dekoratif say ve alt=""
+  const isDecorative = !altText;
+
   return (
     <div className="employee-info">
       <img
         className="employee-photo"
-        alt="Employee photo"
-        src={`http://localhost:8000${image}`}
+        src={`${API_BASE}${image}`}
+        alt={isDecorative ? "" : altText}
+        // İsteğe bağlı iyileştirmeler:
+        loading="lazy"
+        decoding="async"
+        onError={(e) => {
+          e.currentTarget.src = "/images/avatar-placeholder.png";
+        }}
       />
       <p className="employee-notes">{description}</p>
     </div>

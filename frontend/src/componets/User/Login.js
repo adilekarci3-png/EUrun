@@ -9,7 +9,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { login, fetchMe } from "../../redux/authSlice";
 import { readGuestCart, clearGuestCart } from "../../utils/guestCart";
 import { addToCart, fetchCart } from "../../redux/cartSlice"
-import { syncGuestFavorites, fetchFavorites } from "../../redux/favoritesSlice";
+import { syncGuestFavorites } from "../../redux/favoritesSlice";
 
 function Login() {
   const navigate = useNavigate();

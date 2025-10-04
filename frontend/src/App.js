@@ -30,6 +30,8 @@ import FirmaList from "./componets/Firmalar/FirmaList";
 import FirmaCreatePage from "./componets/Firmalar/FirmaCreatePage";
 import SmartAssistant from "./componets/SmartAI/SmartAssistant";
 import ProductStream from "./componets/ProductStream";
+import DirectUpload from "./componets/DirectUpload";
+import ChatBox from "./componets/ChatBox";
 
 attachAuthInterceptors(store);
 
@@ -46,7 +48,7 @@ function App() {
           <Route path="/password-reset" element={<PasswordResetRequest />} />
           <Route path="/sms-giris" element={<SMSGiris />} />
           <Route path="/reset-password/:uidb64/:token" element={<PasswordResetConfirm />} />
-          
+          <Route path="/chat" element={<ChatBox room="general" user="Adile" />} />
           <Route element={<MainLayout />}>
             <Route path="/cart" element={<Cart />} />
             <Route path="/" element={<Product />} />
@@ -61,6 +63,7 @@ function App() {
             <Route path="/productlist2" element={<ProductList2 />} />
             <Route path="/productCreate" element={<ProductCreate />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/upload" element={<DirectUpload />} />
             
             <Route path="/firmalar" element={<FirmaList />} />
             <Route path="/firma-create" element={<FirmaCreatePage />} />

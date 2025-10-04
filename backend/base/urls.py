@@ -1,6 +1,8 @@
 from django.urls import include, path
 
 from accounts.views import LoginView, MeView
+from base.views_upload import get_presigned_post,get_presigned_download, list_private_objects
+
 from . import views
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
@@ -57,4 +59,9 @@ urlpatterns = [
     path("notifications/mark-all-read/", views.NotificationMarkAllReadAPIView.as_view(), name="notifications-mark-all"),
     path("notifications/<int:pk>/mark-read/", views.NotificationMarkReadAPIView.as_view(), name="notifications-mark"),
     
+    path("upload/presigned-post/", get_presigned_post),
+    path("upload/presigned-download/", get_presigned_download),
+    path("upload/list/", list_private_objects),
 ]
+
+

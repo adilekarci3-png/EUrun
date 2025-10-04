@@ -13,3 +13,12 @@ code {
 }
 
 
+.ck.ck-editor__main > .ck-editor__editable {
+  min-height: 160px;
+}
+.ck-editor__top {
+  display: block;
+}
+.ck.ck-editor {
+  overflow: visible;
+}

@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { Col, Card, Button, Container, Row } from "react-bootstrap";
 import { useLocation } from "react-router-dom";
 import { api } from "../redux/authSlice";
-import axios from "axios";
 
 function Product() {
   const [products, setProducts] = useState([]);
@@ -13,14 +12,18 @@ function Product() {
   const queryParams = new URLSearchParams(location.search);
   const searchQuery = queryParams.get("search") || "";
 
-  // const API_BASE = "http://localhost:8000/api";
-  // (import.meta?.env && import.meta.env.VITE_API_BASE) ||
-  // process.env.REACT_APP_API_BASE ||
-  
+  const MINIO_ENDPOINT = "http://46.31.79.7:9000";
+  const PUBLIC_BUCKET = "media-public";
+  const API_BASE = "http://localhost:8000";
 
-  // const api = axios.create({ baseURL: API_BASE });
- 
-useEffect(() => {
+  const buildPublicImageUrl = (img) => {
+    if (!img || typeof img !== "string") return "";
+    if (img.startsWith("http://") || img.startsWith("https://")) return img;
+    if (img.startsWith("/")) return `${API_BASE}${img}`;
+    return `${MINIO_ENDPOINT}/${PUBLIC_BUCKET}/${img}`;
+  };
+
+  useEffect(() => {
     let cancelled = false;
     const controller = new AbortController();
 
@@ -33,6 +36,7 @@ useEffect(() => {
           api.get("/categories/", { signal: controller.signal }),
         ]);
         if (cancelled) return;
+        console.log("Ürün verisi:", pRes.data);
         setProducts(pRes.data || []);
         setBrands(bRes.data || []);
         setCategories(cRes.data || []);
@@ -56,7 +60,6 @@ useEffect(() => {
     setFilteredProducts(filtered);
   }, [products, searchQuery]);
 
-
   return (
     <Container className="mt-4">
       <h1>Ürünler</h1>
@@ -71,9 +74,10 @@ useEffect(() => {
             <Card style={{ width: "100%" }}>
               <Card.Img
                 variant="top"
-                src={`http://localhost:8000${product.image}`}
+                src={buildPublicImageUrl(product.image)}
                 alt={product.name}
                 style={{ height: "200px", objectFit: "cover" }}
+                onError={(e) => (e.currentTarget.style.visibility = "hidden")}
               />
               <Card.Body>
                 <Card.Title>{product.name}</Card.Title>
@@ -90,7 +94,8 @@ useEffect(() => {
                 </Card.Text>
                 <Card.Text>
                   <strong>Kategori:</strong>{" "}
-                  {categories.find((c) => c.id === product.category)?.name || "-"}
+                  {categories.find((c) => c.id === product.category)?.name ||
+                    "-"}
                 </Card.Text>
                 <Button variant="primary" href={`/products/${product.id}`}>
                   Ürünü İncele

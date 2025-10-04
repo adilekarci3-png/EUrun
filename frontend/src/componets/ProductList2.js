@@ -2,7 +2,6 @@ import React, { useCallback, useState, useEffect } from "react";
 import Button from "devextreme-react/button";
 import DataGrid, {
   Column,
-  Editing,
   Paging,
   Lookup,
 } from "devextreme-react/data-grid";
@@ -10,6 +9,17 @@ import Popup from "devextreme-react/popup";
 import axios from "axios";
 import Swal from "sweetalert2";
 import ProductCreate from "./ProductCreate";
+
+const MINIO_ENDPOINT = "http://46.31.79.7:9000";
+const PUBLIC_BUCKET = "media-public";
+const API_BASE = "http://localhost:8000";
+
+const buildPublicImageUrl = (img) => {
+  if (!img || typeof img !== "string") return "";
+  if (img.startsWith("http://") || img.startsWith("https://")) return img;
+  if (img.startsWith("/")) return `${API_BASE}${img}`; // /media/... gibi
+  return `${MINIO_ENDPOINT}/${PUBLIC_BUCKET}/${img}`; // objectKey varsayımı
+};
 
 function ProductList2() {
   const [products, setProducts] = useState([]);
@@ -19,9 +29,7 @@ function ProductList2() {
   const [popupVisible, setPopupVisible] = useState(false);
   const [selectedData, setSelectedData] = useState(null);
 
-  const logEvent = useCallback((eventName) => {
-    setEvents((previousEvents) => [eventName, ...previousEvents]);
-  }, []);
+ 
   const clearEvents = useCallback(() => {
     setEvents([]);
   }, []);
@@ -50,35 +58,36 @@ function ProductList2() {
     try {
       const res = await axios.get("http://localhost:8000/api/products/");
       setProducts(res.data);
+      console.log("Ürün verisi:", res.data);
     } catch (err) {
       console.error("Ürün verisi çekilemedi:", err);
     }
   };
-  
+
   const handleDeleteClick = async (rowData) => {
-  const result = await Swal.fire({
-    title: "Emin misiniz?",
-    text: "Bu ürünü silmek istediğinizden emin misiniz?",
-    icon: "warning",
-    showCancelButton: true,
-    confirmButtonText: "Evet, sil",
-    cancelButtonText: "Hayır, iptal et",
-  });
+    const result = await Swal.fire({
+      title: "Emin misiniz?",
+      text: "Bu ürünü silmek istediğinizden emin misiniz?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Evet, sil",
+      cancelButtonText: "Hayır, iptal et",
+    });
 
-  if (result.isConfirmed) {
-    try {
-      await axios.delete(
-        `http://localhost:8000/api/products/delete/${rowData.id}/`
-      );
-      Swal.fire("Başarılı", "Ürün başarıyla silindi", "success");
-    } catch (error) {
-      Swal.fire("Hata", "Ürün silinemedi", "error");
+    if (result.isConfirmed) {
+      try {
+        await axios.delete(
+          `http://localhost:8000/api/products/delete/${rowData.id}/`
+        );
+        Swal.fire("Başarılı", "Ürün başarıyla silindi", "success");
+      } catch (error) {
+        Swal.fire("Hata", "Ürün silinemedi", "error");
+      }
     }
-  }
-};
+  };
 
-  const handleEditClick = (rowData) => {   
-    console.log(rowData) 
+  const handleEditClick = (rowData) => {
+    console.log(rowData);
     setSelectedData(rowData);
     setPopupVisible(true);
   };
@@ -96,7 +105,7 @@ function ProductList2() {
         title="Yeni Ürün Ekle"
         visible={popupVisible}
         onHiding={() => setPopupVisible(false)}
-        dragEnabled={true}        
+        dragEnabled={true}
         showCloseButton={true}
         width={600}
         height={600}
@@ -107,8 +116,7 @@ function ProductList2() {
             fetchProducts();
             setPopupVisible(false);
           }}
-        />     
-        
+        />
       </Popup>
 
       {/* Grid */}
@@ -117,26 +125,30 @@ function ProductList2() {
         dataSource={products}
         keyExpr="id"
         allowColumnReordering={true}
-        showBorders={true}   
+        showBorders={true}
       >
         <Paging enabled={true} />
-        
+
         <Column dataField="name" caption="İsim" />
         <Column
           dataField="image"
           caption="Resim"
-          cellRender={({ data }) => (
-            <img
-              src={`http://localhost:8000${data.image}`}
-              alt="Ürün görseli"
-              style={{
-                width: "60px",
-                height: "60px",
-                objectFit: "cover",
-                borderRadius: "4px",
-              }}
-            />
-          )}
+          cellRender={({ data }) => {
+            const src = buildPublicImageUrl(data.image);
+            return (
+              <img
+                src={src}
+                alt="Ürün görseli"
+                style={{
+                  width: "60px",
+                  height: "60px",
+                  objectFit: "cover",
+                  borderRadius: "4px",
+                }}
+                onError={(e) => (e.currentTarget.style.visibility = "hidden")}
+              />
+            );
+          }}
           width={80}
         />
         <Column dataField="price" caption="Fiyat" />
@@ -167,9 +179,8 @@ function ProductList2() {
             <div
               style={{ display: "flex", justifyContent: "center", gap: "6px" }}
             >
-              
               <img
-                src="resources/images/edit-button.png"            
+                src="resources/images/edit-button.png"
                 alt="Düzenle"
                 title="Düzenle"
                 width="24"

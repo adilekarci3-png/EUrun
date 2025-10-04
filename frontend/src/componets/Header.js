@@ -50,17 +50,17 @@ function getAccessTokenFromStorage() {
   }
 }
 
-function getRolesFromTokenFallback() {
-  const t = getAccessTokenFromStorage();
-  if (!t) return [];
-  const payload = parseJwt(t);
-  const raw = payload?.roles ?? payload?.role ?? [];
-  const list = Array.isArray(raw) ? raw : [raw];
-  // Türkçe karakter ve olası encode sorunlarına karşı normalize:
-  return list
-    .filter(Boolean)
-    .map((r) => (typeof r === "string" ? r.normalize("NFC") : String(r)));
-}
+// function getRolesFromTokenFallback() {
+//   const t = getAccessTokenFromStorage();
+//   if (!t) return [];
+//   const payload = parseJwt(t);
+//   const raw = payload?.roles ?? payload?.role ?? [];
+//   const list = Array.isArray(raw) ? raw : [raw];
+//   // Türkçe karakter ve olası encode sorunlarına karşı normalize:
+//   return list
+//     .filter(Boolean)
+//     .map((r) => (typeof r === "string" ? r.normalize("NFC") : String(r)));
+// }
 
 function Header() {
   const [show, setShow] = useState(false);

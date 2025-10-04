@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from accounts.models import CustomUser
 from accounts.serializers import User
-from .models import Brand, CartItem, Category, CustomUserProfile, Notification, Product, ProductQuestionAnswer, ProductRating
+from .models import Brand, CartItem, Category, CustomUserProfile, Document, Notification, Product, ProductQuestionAnswer, ProductRating
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
@@ -129,3 +129,8 @@ class NotificationSerializer(serializers.ModelSerializer):
             "read", "created_at", "content_type", "object_id"
         ]
         read_only_fields = ["id", "created_at", "content_type", "object_id"]
+        
+class DocumentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Document
+        fields = "__all__"

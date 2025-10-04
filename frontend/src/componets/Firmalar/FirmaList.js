@@ -56,7 +56,7 @@ const FirmaList = () => {
   };
 
   const handleDelete = async (firma) => {
-    const confirmDelete = window.confirm(`\"${firma.full_name}\" adlı firmayı silmek istiyor musunuz?`);
+    const confirmDelete = window.confirm(`"${firma?.full_name}" adlı firmayı silmek istiyor musunuz?`);
     if (!confirmDelete) return;
 
     try {

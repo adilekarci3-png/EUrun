@@ -1,4 +1,5 @@
 import random
+
 from django.conf import settings
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.csrf import csrf_exempt
@@ -7,11 +8,11 @@ from google.auth.transport import requests as g_requests
 import json
 from django.db import models
 import requests
-
+from rest_framework.viewsets import ModelViewSet
 from accounts.models import CustomUser
 from accounts.serializers import EmailTokenObtainPairSerializer
-from base.models import Notification, Brand, CartItem, Category, CustomUserProfile, Product,ProductFavorite, ProductQuestionAnswer, ProductRating
-from base.serializer import NotificationSerializer, BrandSerializer, CartItemSerializer, CategorySerializer, CustomUserSerializer, ProductQuestionAnswerSerializer, ProductRatingSerializer, ProductSerializer,ChangePasswordSerializer,RegisterSerializer
+from base.models import Document, Notification, Brand, CartItem, Category, CustomUserProfile, Product,ProductFavorite, ProductQuestionAnswer, ProductRating
+from base.serializer import DocumentSerializer, NotificationSerializer, BrandSerializer, CartItemSerializer, CategorySerializer, CustomUserSerializer, ProductQuestionAnswerSerializer, ProductRatingSerializer, ProductSerializer,ChangePasswordSerializer,RegisterSerializer
 
 from rest_framework.decorators import api_view,permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -708,3 +709,7 @@ class NotificationMarkAllReadAPIView(APIView):
         )
         qs.update(read=True)
         return Response({"detail": "All read"})
+    
+class DocumentViewSet(ModelViewSet):
+    queryset = Document.objects.all()
+    serializer_class = DocumentSerializer

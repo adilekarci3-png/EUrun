@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+// src/components/ProductDetailsKopya.js
+import React, { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
   Container,
@@ -12,7 +13,7 @@ import {
   ListGroup,
   Form,
 } from "react-bootstrap";
-import {api} from "../redux/authSlice";
+import { api } from "../redux/authSlice";
 import { useDispatch } from "react-redux";
 import { addToCart, fetchCart } from "../redux/cartSlice";
 import { FaShoppingCart, FaHeart, FaRegHeart } from "react-icons/fa";
@@ -21,6 +22,8 @@ import ProductReviewsTab from "./ProductReviewsTab";
 
 function ProductDetailsKopya() {
   const { id } = useParams();
+  const dispatch = useDispatch();
+
   const [product, setProduct] = useState(null);
   const [favorited, setFavorited] = useState(false);
   const [averageRating, setAverageRating] = useState(0);
@@ -31,41 +34,57 @@ function ProductDetailsKopya() {
   const [reviews, setReviews] = useState([]);
   const [questions, setQuestions] = useState([]);
 
-  // const api = useAxios();
-  const dispatch = useDispatch();
+  // .env'den API tabanı; yoksa localhost
+  const API_BASE =
+    process.env.REACT_APP_API_BASE || "http://localhost:8000";
 
-  const fetchData = async () => {
-    try {
-      const [
-        productRes,
-        userRatingRes,
-        favoritedRes,
-        reviewsRes,
-        questionsRes,
-      ] = await Promise.all([
-        api.get(`products/${id}/`),
-        api.get(`products/${id}/user-rating/`),
-        api.get(`products/${id}/is-favorited/`),
-        api.get(`products/${id}/reviews/`),
-        api.get(`products/${id}/qa/`),
-      ]);
-
-      setProduct(productRes.data);
-      setAverageRating(productRes.data.rating);
-      setUserRating(userRatingRes.data.rating);
-      setFavorited(favoritedRes.data.favorited);
-      setReviews(reviewsRes.data);
-      setQuestions(questionsRes.data);
-    } catch (error) {
-      console.error("Veriler alınırken hata oluştu:", error);
-    }
-  };
-
+  // Mesajı 3 sn sonra temizle
   useEffect(() => {
-    fetchData();
+    if (!message) return;
+    const t = setTimeout(() => setMessage(null), 3000);
+    return () => clearTimeout(t);
+  }, [message]);
+
+  // VERİYİ ÇEK — useCallback ile stable
+  const fetchData = useCallback(async (signal) => {
+    const [
+      productRes,
+      userRatingRes,
+      favoritedRes,
+      reviewsRes,
+      questionsRes,
+    ] = await Promise.all([
+      api.get(`products/${id}/`, { signal }),
+      api.get(`products/${id}/user-rating/`, { signal }),
+      api.get(`products/${id}/is-favorited/`, { signal }),
+      api.get(`products/${id}/reviews/`, { signal }),
+      api.get(`products/${id}/qa/`, { signal }),
+    ]);
+
+    setProduct(productRes.data);
+    setAverageRating(productRes.data?.rating ?? 0);
+    setUserRating(userRatingRes.data?.rating ?? 0);
+    setFavorited(!!favoritedRes.data?.favorited);
+    setReviews(reviewsRes.data ?? []);
+    setQuestions(questionsRes.data ?? []);
   }, [id]);
 
+  // İlk yükleme + id değişince tekrar
+  useEffect(() => {
+    const controller = new AbortController();
+    (async () => {
+      try {
+        await fetchData(controller.signal);
+      } catch (error) {
+        if (error?.name === "CanceledError" || error?.code === "ERR_CANCELED") return;
+        console.error("Veriler alınırken hata oluştu:", error);
+      }
+    })();
+    return () => controller.abort();
+  }, [fetchData]);
+
   const handleAddToCart = () => {
+    if (!product?.id) return;
     dispatch(addToCart({ product_id: product.id, quantity: 1 }))
       .then(() => dispatch(fetchCart()))
       .then(() => setMessage("Sepete eklendi."));
@@ -74,8 +93,7 @@ function ProductDetailsKopya() {
   const handleFavorite = () => {
     if (!favorited) {
       // Favorilere ekle
-      api
-        .post(`products/${id}/favorite/`)
+      api.post(`products/${id}/favorite/`)
         .then(() => {
           setFavorited(true);
           setMessage("Favorilere eklendi.");
@@ -86,8 +104,7 @@ function ProductDetailsKopya() {
         });
     } else {
       // Favoriden çıkar
-      api
-        .delete(`products/${id}/favorite/`)
+      api.delete(`products/${id}/favorite/`)
         .then(() => {
           setFavorited(false);
           setMessage("Favorilerden çıkarıldı.");
@@ -100,14 +117,11 @@ function ProductDetailsKopya() {
   };
 
   const handleRating = (rate) => {
-    if (rate) {
-      setUserRating(rate);
-    }
-    api
-      .post(`products/${id}/rate/`, { rating: rate })
+    if (rate) setUserRating(rate);
+    api.post(`products/${id}/rate/`, { rating: rate })
       .then((res) => {
         if (res.data && res.data.update_average_rating) {
-          setAverageRating(res.data.update_average_rating); // hemen UI'ı güncelle
+          setAverageRating(res.data.update_average_rating);
         }
         setMessage(`Puanınız: ${rate} yıldız olarak kaydedildi.`);
       })
@@ -117,34 +131,40 @@ function ProductDetailsKopya() {
       });
   };
 
-  const submitReview = () => {
-    if (!userRating || !reviewText.trim())
-      return alert("Puan ve yorum gerekli.");
-    api
-      .post(`/products/${id}/reviews/`, {
+  const submitReview = async () => {
+    if (!userRating || !reviewText.trim()) {
+      alert("Puan ve yorum gerekli.");
+      return;
+    }
+    try {
+      await api.post(`products/${id}/reviews/`, {
         rating: userRating,
         comment: reviewText,
-      })
-      .then(() => {
-        setReviewText("");
-        setUserRating(0);
-        fetchData();
-        console.log(reviews);
-      })
-      .catch((err) => console.error(err));
+      });
+      setReviewText("");
+      setUserRating(0);
+      setMessage("Yorumunuz kaydedildi.");
+      await fetchData(); // listeyi yenile
+    } catch (err) {
+      console.error("Yorum gönderme hatası:", err);
+      setMessage("Yorum kaydedilemedi.");
+    }
   };
 
-  const submitQuestion = () => {
-    if (!questionText.trim()) return alert("Soru boş olamaz.");
-    api
-      .post(`/products/${id}/qa/`, {
-        question: questionText,
-      })
-      .then(() => {
-        setQuestionText("");
-        fetchData();
-      })
-      .catch((err) => console.error(err));
+  const submitQuestion = async () => {
+    if (!questionText.trim()) {
+      alert("Soru boş olamaz.");
+      return;
+    }
+    try {
+      await api.post(`products/${id}/qa/`, { question: questionText });
+      setQuestionText("");
+      setMessage("Sorunuz gönderildi.");
+      await fetchData(); // listeyi yenile
+    } catch (err) {
+      console.error("Soru gönderme hatası:", err);
+      setMessage("Soru gönderilemedi.");
+    }
   };
 
   if (!product) {
@@ -161,11 +181,15 @@ function ProductDetailsKopya() {
       <Row>
         <Col md={6}>
           <img
-            src={`http://localhost:8000${product.image}`}
-            alt={product.name}
+            src={`${API_BASE}${product.image ?? ""}`}
+            alt={product.name || "Ürün görseli"}
             className="img-fluid"
+            onError={(e) => {
+              e.currentTarget.src = "/images/product-placeholder.png";
+            }}
           />
         </Col>
+
         <Col md={6}>
           <Tabs defaultActiveKey="description" id="my-tabs" className="mb-3">
             <Tab eventKey="description" title="Ürün Açıklaması">
@@ -189,39 +213,13 @@ function ProductDetailsKopya() {
                 </Card.Body>
               </Card>
             </Tab>
+
             <Tab eventKey="reviews" title="Değerlendirmeler">
               <div className="mb-3">
                 <strong>Sizin Puanınız:</strong>{" "}
                 {renderStars(userRating, true, handleRating)}
               </div>
-              {/* <ListGroup variant="flush">
-                {reviews.length === 0 ? (
-                  <ListGroup.Item>Henüz Yorum Yok</ListGroup.Item>
-                ) : (
-                  reviews.map((rev, idx) => (
-                    <ListGroup.Item key={idx}>
-                      <strong>{rev.user}</strong>: {rev.comment} ({rev.rating}{" "}
-                      ⭐)
-                    </ListGroup.Item>
-                  ))
-                )}               
-              </ListGroup>
-              <Form className="mt-4">
-                <h5>Yorum Ekle</h5>
-                <Form.Group className="mb-2" controlId="reviewText">
-                  <Form.Control
-                    name="reviewText"
-                    as="textarea"
-                    rows={3}
-                    placeholder="Yorumunuzu yazın..."
-                    value={reviewText}
-                    onChange={(e) => setReviewText(e.target.value)}
-                  />
-                </Form.Group>
-                <Button variant="primary" onClick={submitReview}>
-                  Gönder
-                </Button>
-              </Form> */}
+
               <ProductReviewsTab
                 reviews={reviews}
                 userRating={userRating}
@@ -231,6 +229,7 @@ function ProductDetailsKopya() {
                 onSubmitReview={submitReview}
               />
             </Tab>
+
             <Tab eventKey="qa" title="Soru & Cevap">
               <ListGroup variant="flush">
                 {questions.length === 0 ? (
@@ -248,11 +247,13 @@ function ProductDetailsKopya() {
                   ))
                 )}
               </ListGroup>
+
               <Form className="mt-4">
                 <h5>Soru Sor</h5>
                 <Form.Group className="mb-2" controlId="questionText">
                   <Form.Control
-                    type="textarea"
+                    as="textarea"
+                    rows={3}
                     placeholder="Sorunuzu yazın..."
                     value={questionText}
                     onChange={(e) => setQuestionText(e.target.value)}
@@ -264,6 +265,7 @@ function ProductDetailsKopya() {
               </Form>
             </Tab>
           </Tabs>
+
           <div className="d-flex gap-2 my-3 flex-wrap">
             <div className="d-flex gap-3 my-3 flex-wrap">
               <span

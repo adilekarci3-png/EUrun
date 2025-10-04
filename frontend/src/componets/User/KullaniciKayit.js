@@ -21,8 +21,7 @@ function KullaniciKayit() {
                 <h2 className="mb-4 fw-bold text-center">Kullanıcı Kaydı</h2>
 
                 <Formik
-                  initialValues={{
-                    email: "",
+                  initialValues={{                    
                     email: "",
                     password: "",
                     password2: "",

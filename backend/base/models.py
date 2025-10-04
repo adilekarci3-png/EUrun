@@ -151,3 +151,10 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"{self.title} ({self.type})"
+    
+class Document(models.Model):
+    title = models.CharField(max_length=200)
+    file = models.FileField(upload_to="uploads/%Y/%m/%d/")
+
+    def __str__(self):
+        return self.title

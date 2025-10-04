@@ -1,5 +1,5 @@
 // src/pages/ProductDetail.jsx
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
   Container,
@@ -20,7 +20,12 @@ import { FaShoppingCart, FaHeart, FaRegHeart } from "react-icons/fa";
 import { api, selectIsLoggedIn } from "../redux/authSlice";
 import { addToCart, fetchCart } from "../redux/cartSlice";
 import { renderStars } from "../utils/renderStars";
-import { selectIsFavorited, addFavorite, removeFavorite,fetchFavorites } from "../redux/favoritesSlice";
+import {
+  selectIsFavorited,
+  addFavorite,
+  removeFavorite,
+  fetchFavorites,
+} from "../redux/favoritesSlice";
 
 function ProductDetail() {
   const { id } = useParams();
@@ -28,9 +33,11 @@ function ProductDetail() {
   const dispatch = useDispatch();
 
   const isLoggedIn = useSelector(selectIsLoggedIn);
-  const favorites = useSelector((s) => s.favorites.items);
+  const isFavorited = useSelector((state) => selectIsFavorited(state, productId));
 
-  const base_url = "http://localhost:8000/api";
+  // .env desteği: REACT_APP_API_BASE yoksa localhost
+  const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:8000";
+  const PUBLIC_API = `${API_BASE}/api`;
 
   const [product, setProduct] = useState(null);
   const [averageRating, setAverageRating] = useState(0);
@@ -41,26 +48,29 @@ function ProductDetail() {
   const [reviews, setReviews] = useState([]);
   const [questions, setQuestions] = useState([]);
 
-  const isFavorited = useSelector((state) => selectIsFavorited(state, productId));
-  console.log(isFavorited);
-  console.log(id);
-  console.log(product);
+  // Mesajları 3sn sonra temizle
+  useEffect(() => {
+    if (!message) return;
+    const t = setTimeout(() => setMessage(null), 3000);
+    return () => clearTimeout(t);
+  }, [message]);
 
-  const fetchData = async () => {
-    try {
+  // ---- DATA FETCH (stable) ----
+  const fetchData = useCallback(
+    async (signal) => {
       const [productRes, userRatingRes, reviewsRes, questionsRes] =
         await Promise.all([
           // PUBLIC
-          axios.get(`${base_url}/products/${id}/`),
+          axios.get(`${PUBLIC_API}/products/${id}/`, { signal }),
 
           // AUTH (sadece girişliyse)
           isLoggedIn
-            ? api.get(`products/${id}/user-rating/`)
+            ? api.get(`products/${id}/user-rating/`, { signal })
             : Promise.resolve({ data: { rating: 0 } }),
 
           // PUBLIC
-          axios.get(`${base_url}/products/${id}/reviews/`),
-          axios.get(`${base_url}/products/${id}/qa/`),
+          axios.get(`${PUBLIC_API}/products/${id}/reviews/`, { signal }),
+          axios.get(`${PUBLIC_API}/products/${id}/qa/`, { signal }),
         ]);
 
       const pd = productRes?.data ?? {};
@@ -69,31 +79,39 @@ function ProductDetail() {
       setUserRating(userRatingRes?.data?.rating ?? 0);
       setReviews(Array.isArray(reviewsRes?.data) ? reviewsRes.data : []);
       setQuestions(Array.isArray(questionsRes?.data) ? questionsRes.data : []);
-    } catch (err) {
-      console.error("Veriler alınırken hata oluştu:", err);
-      setMessage("Veriler alınamadı.");
-    }
-  };
+    },
+    [id, isLoggedIn, PUBLIC_API]
+  );
 
-  // İlk yükleme + login durumu değiştiğinde (kullanıcı puanı vs. için)
+  // İlk yükleme + login değişince (kullanıcı puanı vs.)
   useEffect(() => {
-    fetchData();
-  }, [id, isLoggedIn]);
+    const controller = new AbortController();
+    (async () => {
+      try {
+        await fetchData(controller.signal);
+      } catch (err) {
+        if (err?.name === "CanceledError" || err?.code === "ERR_CANCELED") return;
+        console.error("Veriler alınırken hata oluştu:", err);
+        setMessage("Veriler alınamadı.");
+      }
+    })();
+    return () => controller.abort();
+  }, [fetchData]);
 
-  // Favoriler: sayfa açıldığında ya da login değiştiğinde güncel olsun
+  // Favoriler: sayfa açıldığında / login değiştiğinde / ürün değiştiğinde
   useEffect(() => {
+    if (!Number.isFinite(productId)) return;
     dispatch(fetchFavorites([productId]));
-  }, [dispatch, isLoggedIn]);
+  }, [dispatch, isLoggedIn, productId]);
 
   const handleAddToCart = () => {
     if (!product?.id) return;
 
-    // Guest ise localStorage, login ise API — slice halledecek
     dispatch(
       addToCart({
         product_id: product.id,
         quantity: 1,
-        // Guest modda kart özetinde göstermek için faydalı
+        // Guest modda kart özetinde hızlı render için
         product: {
           id: product.id,
           title: product.name,
@@ -104,47 +122,43 @@ function ProductDetail() {
     )
       .unwrap()
       .then(() => {
-        if (isLoggedIn) dispatch(fetchCart()); // server modda senkron olsun
+        if (isLoggedIn) dispatch(fetchCart());
         setMessage("Sepete eklendi.");
       })
       .catch(() => setMessage("Sepete eklenemedi."));
   };
 
   const handleFavorite = async () => {
-  if (!product?.id) return;
-
-  try {
-    if (isFavorited) {
-      // Ürün favorideyse: sil
-      await dispatch(removeFavorite({ product_id: product.id })).unwrap();
-      setMessage("Favorilerden çıkarıldı.");
-    } else {
-      // Ürün favoride değilse: ekle
-      await dispatch(
-        addFavorite({
-          product_id: product.id,
-          // guest görünümünde hızlı render için
-          product: {
-            id: product.id,
-            title: product.name,
-            image: product.image,
-            price: product.price,
-          },
-        })
-      ).unwrap();
-      setMessage("Favorilere eklendi.");
+    if (!product?.id) return;
+    try {
+      if (isFavorited) {
+        await dispatch(removeFavorite({ product_id: product.id })).unwrap();
+        setMessage("Favorilerden çıkarıldı.");
+      } else {
+        await dispatch(
+          addFavorite({
+            product_id: product.id,
+            product: {
+              id: product.id,
+              title: product.name,
+              image: product.image,
+              price: product.price,
+            },
+          })
+        ).unwrap();
+        setMessage("Favorilere eklendi.");
+      }
+      dispatch(fetchFavorites([productId]));
+    } catch (err) {
+      console.error(err);
+      setMessage("İşlem başarısız.");
     }
+  };
 
-    // Sunucu modunda eşitlenmesi için (guest'te da sorun olmaz)
-    dispatch(fetchFavorites([productId]));
-  } catch (err) {
-    setMessage("İşlem başarısız.");
-    console.error(err);
-  }
-};
   const handleRating = (rate) => {
     if (!isLoggedIn) return setMessage("Puan vermek için giriş yapmalısınız.");
     if (rate) setUserRating(rate);
+
     api
       .post(`products/${id}/rate/`, { rating: rate })
       .then((res) => {
@@ -155,33 +169,36 @@ function ProductDetail() {
       .catch(() => setMessage("Puan verilemedi."));
   };
 
-  const submitReview = () => {
+  const submitReview = async () => {
     if (!isLoggedIn) return alert("Yorum için giriş yapmalısınız.");
-    if (!userRating || !reviewText.trim())
-      return alert("Puan ve yorum gerekli.");
-    api
-      .post(`products/${id}/reviews/`, {
+    if (!userRating || !reviewText.trim()) return alert("Puan ve yorum gerekli.");
+    try {
+      await api.post(`products/${id}/reviews/`, {
         rating: userRating,
         comment: reviewText,
-      })
-      .then(() => {
-        setReviewText("");
-        setUserRating(0);
-        fetchData();
-      })
-      .catch(console.error);
+      });
+      setReviewText("");
+      setUserRating(0);
+      await fetchData(); // listeyi yenile
+      setMessage("Yorumunuz kaydedildi.");
+    } catch (err) {
+      console.error(err);
+      setMessage("Yorum kaydedilemedi.");
+    }
   };
 
-  const submitQuestion = () => {
+  const submitQuestion = async () => {
     if (!isLoggedIn) return alert("Soru sormak için giriş yapmalısınız.");
     if (!questionText.trim()) return alert("Soru boş olamaz.");
-    api
-      .post(`products/${id}/qa/`, { question: questionText })
-      .then(() => {
-        setQuestionText("");
-        fetchData();
-      })
-      .catch(console.error);
+    try {
+      await api.post(`products/${id}/qa/`, { question: questionText });
+      setQuestionText("");
+      await fetchData(); // listeyi yenile
+      setMessage("Sorunuz gönderildi.");
+    } catch (err) {
+      console.error(err);
+      setMessage("Soru gönderilemedi.");
+    }
   };
 
   if (!product) {
@@ -198,9 +215,12 @@ function ProductDetail() {
       <Row>
         <Col md={6}>
           <img
-            src={`http://localhost:8000${product.image}`}
-            alt={product.name || product.title}
+            src={`${API_BASE}${product.image ?? ""}`}
+            alt={product.name || product.title || "Ürün görseli"}
             className="img-fluid"
+            onError={(e) => {
+              e.currentTarget.src = "/images/product-placeholder.png";
+            }}
           />
         </Col>
         <Col md={6}>
@@ -232,6 +252,7 @@ function ProductDetail() {
                 <strong>Sizin Puanınız:</strong>{" "}
                 {renderStars(userRating, true, handleRating)}
               </div>
+
               <ListGroup variant="flush">
                 {reviews.length === 0 ? (
                   <ListGroup.Item>Henüz Yorum Yok</ListGroup.Item>
@@ -243,6 +264,7 @@ function ProductDetail() {
                   ))
                 )}
               </ListGroup>
+
               <Form className="mt-4">
                 <h5>Yorum Ekle</h5>
                 <Form.Group className="mb-2" controlId="reviewText">
@@ -268,15 +290,12 @@ function ProductDetail() {
                   questions.map((qa, i) => (
                     <ListGroup.Item key={i}>
                       <strong>{qa.user}</strong>: {qa.question}
-                      {qa.answer && (
-                        <div className="text-muted mt-1">
-                          Cevap: {qa.answer}
-                        </div>
-                      )}
+                      {qa.answer && <div className="text-muted mt-1">Cevap: {qa.answer}</div>}
                     </ListGroup.Item>
                   ))
                 )}
               </ListGroup>
+
               <Form className="mt-4">
                 <h5>Soru Sor</h5>
                 <Form.Group className="mb-2" controlId="questionText">
